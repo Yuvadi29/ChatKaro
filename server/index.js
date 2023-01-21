@@ -1,19 +1,34 @@
 const express = require('express');
-const socketio = require('socket.io');
+const app = express();
 const http = require('http');
+const server = http.createServer(app);
+const io = require('socket.io')(server, {cors: {origin: "*"}})
 const cors = require('cors');
 
-
-const PORT = process.env.PORT || 5000;
+const PORT = 5000;
 
 // Setup Socket Io
-const app = express();
-const server = http.createServer(app);
+// const server = http.createServer(app);
+
+app.use(cors());
+
+
+const router = require('./routes');
+app.use(router);
 
 //Instance for Socket Io
-const io = socketio(server);
+
 io.on('connection', (socket) => {
     console.log('We have a new Connection');
+
+    socket.on('join', ({ name, room }, callback) => {
+        console.log(name, room);
+
+        // const error = true;
+        // if(error) {
+        //     callback({ error: 'error' });
+        // }
+    });
 
     socket.on('disconnect', () => {
         console.log('User Disconnected');
@@ -21,13 +36,6 @@ io.on('connection', (socket) => {
 });
 
 
-const router = require('./routes/route');
-app.use(router);
 
 server.listen(PORT, () => console.log(`Server running on Port ${PORT}`));
 
-app.use(cors(
-    {
-        origin: '*',
-    }
-));
