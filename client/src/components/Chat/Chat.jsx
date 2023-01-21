@@ -9,6 +9,8 @@ const Chat = ({ location }) => {
 
   const [name, setName] = useState('');
   const [room, setRoom] = useState('');
+  const [message, setMessage] = useState([]);
+  const [messages, setMessages] = useState([]);
   const EndPoint = 'http://localhost:5000';
 
   // This will return us a URL  
@@ -23,19 +25,42 @@ const Chat = ({ location }) => {
       // alert();
     });
 
-    return () =>{
+    return () => {
       socket.emit('disconnect');
-      
+
       socket.off();
     }
-  },[EndPoint]);
+  }, [EndPoint]);
 
+  useEffect(() => {
+    socket.on('message', (message) => {
+      setMessages([...messages, message]); //Add every new message sent by anyone to array
+    });
+  }, [messages]);
+
+  const sendMessage = (event) => {
+
+    event.preventDefault();
+
+    if(message) {
+      socket.emit('sendMessage', message, () => setMessage(''));
+    }
+  }
+
+  console.log(message,messages);
 
   return (
-    <div>
-      <h1>Chat</h1>
+    <div className='outerContainer'>
+      <div className='innerContainer'>
+        <input
+          value={message}
+          onChange={(event) => setMessage(event.target.value)}
+          onKeyPress={event => event.key === 'Enter' ? sendMessage(event) : null}
+        />
+      </div>
     </div>
   )
+
 }
 
 export default Chat;
