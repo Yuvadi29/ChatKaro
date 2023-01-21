@@ -2,8 +2,10 @@ const express = require('express');
 const app = express();
 const http = require('http');
 const server = http.createServer(app);
-const io = require('socket.io')(server, {cors: {origin: "*"}})
+const io = require('socket.io')(server, { cors: { origin: "*" } })
 const cors = require('cors');
+
+const { addUser, removeUser, getUser, getUsersInRoom } = require('./users.js');
 
 const PORT = 5000;
 
@@ -19,15 +21,30 @@ app.use(router);
 //Instance for Socket Io
 
 io.on('connection', (socket) => {
-    console.log('We have a new Connection');
-
     socket.on('join', ({ name, room }, callback) => {
-        console.log(name, room);
+        const { error, user } = addUser({ id: socket.id, name, room });
 
-        // const error = true;
-        // if(error) {
-        //     callback({ error: 'error' });
-        // }
+        if (error) return callback(error);
+
+        // Sending the message on user join
+        socket.emit('message', {
+            user: 'admin', text: `${user.name}, Welcome to the Room ${user.room}.`
+        });
+        // Broadcasting the message on user join
+        socket.broadcast.to(user.room).emit('message', {
+            user: 'admin', text: `${user.name} has joined the Conversation!`
+        });
+
+        socket.join(user.room);
+
+        callback();
+    });
+
+    socket.on('sendMessage', (message, callback) => {
+        const user = getUser(socket.id);
+        io.to(user.room).emit('message', { user: user.name, text: message });
+
+        callback();
     });
 
     socket.on('disconnect', () => {
