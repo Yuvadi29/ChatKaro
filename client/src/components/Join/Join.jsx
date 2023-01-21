@@ -37,7 +37,7 @@ const Join = () => {
         </div>
       </div>
     </>
-  )
+  );
 }
 
 export default Join;
